@@ -2,10 +2,10 @@
 
 ---
 
-### **NAME:**  
-### **DEPARTMENT:**  
-### **ROLL NO:**  
-### **DATE OF EXPERIMENT:**  
+### **NAME: SHAIK AZEEZ AHAMAD**  
+### **DEPARTMENT: B.E.CSE-IOT**  
+### **ROLL NO: 212223110046**  
+### **DATE OF EXPERIMENT:22/08/2026**  
 
 ---
 
@@ -52,13 +52,8 @@ The ADXL335 is a small, thin, low power, complete 3-axis accelerometer with sign
 
 <img width="493" height="103" alt="image" src="https://github.com/user-attachments/assets/26014264-621b-4ca7-9fb8-4c5ffccbee75" />
 
-<img width="465" height="397" alt="image" src="https://github.com/user-attachments/assets/5b67c072-f5b3-4efe-b553-ab125d8744a2" />
 
-<img width="304" height="139" alt="image" src="https://github.com/user-attachments/assets/56257edb-147b-4679-9f19-7ca7e6af895b" />
-
-
- ### FIGURE-03 Accelerometer sensor (ADXL335) ADXL335 module & ADXL or GY 521 connection WITH ETS IoT Kit
-
+ ### FIGURE-03 Accelerometer sensor (ADXL335) ADXL335 module & ADXL connection WITH ETS IoT Kit
 
 ## Working Principle:
 Experiment 4A
@@ -75,13 +70,6 @@ Experiment 4B
 The Accelerometer sensor (ADXL335) D0 is connected one of the GPIO pins in Raspberry Pi 4.
 The Accelerometer sensor (ADXL335) A0 is connected one of the GPIO pins in Raspberry Pi 4.
 The Python script sets the Accelerometer sensor (ADXL335) value based on the variation in the acceleration and shown in Thingzmate Cloud and console.
-
-If you are using BY 521
-
-1.	The Accelerometer sensor (BY 521) SDA is connected one of the GPIO pin 2 in Raspberry Pi 4. 
-2.	The Accelerometer sensor (BY 521) SCL is connected one of the GPIO pin 3 in Raspberry Pi 4. 
-3.	The Python script sets the Accelerometer sensor (BY 521) value based on the variation in the acceleration and shown in Thingzmate Cloud and console.
-
 CIRCUIT DIAGRAM
 Connect the Accelerometer sensor (ADXL335) Vcc to any +5V.
 Connect the Accelerometer sensor (ADXL335) GND to any GND.
@@ -89,21 +77,147 @@ Connect the Accelerometer sensor (ADXL335) X_OUT to any one GPIO.
 Connect the Accelerometer sensor (ADXL335) Y_OUT to any one GPIO. 
 Connect the Accelerometer sensor (ADXL335) Z_OUT to any one GPIO. 
 
-If you are using BY 521
-1.	Connect the Accelerometer sensor (BY 521) Vcc to any +5V. 
-2.	Connect the Accelerometer sensor (BY 521) GND to any GND. 
-3.	Connect the Accelerometer sensor (BY 521) SDA is connected to GPIO 2. 
-4.	Connect the Accelerometer sensor (BY 521) SCL is connected to GPIO 3. 
-5.	Connect the Accelerometer sensor (BY 521) AD0 is connected to GND.
-
-
 Experiment 4A
 ## PROGRAM (Python)
 ```
+from urllib import request
+import json
+import time
+import smbus2
+import ssl
 
+# =====================================================
+# SSL FIX
+# =====================================================
 
- 
+ssl._create_default_https_context = ssl._create_unverified_context
 
+# =====================================================
+# BH1750 SENSOR CONFIGURATION
+# =====================================================
+
+DEVICE = 0x23
+ONE_TIME_HIGH_RES_MODE = 0x20
+
+bus = smbus2.SMBus(1)
+
+# =====================================================
+# THINGZMATE CLOUD CONFIGURATION
+# =====================================================
+
+API_KEY = "67f4c3cd2d1b50bfbdd84948876851b7"
+
+URL = "https://iot.saveetha.in:4433/api/v1/device-types/exp4/devices/exp4edge/uplink"
+
+# =====================================================
+# BH1750 READ FUNCTION
+# =====================================================
+
+def read_light():
+
+    data = bus.read_i2c_block_data(
+        DEVICE,
+        ONE_TIME_HIGH_RES_MODE,
+        2
+    )
+
+    lux = (data[0] << 8 | data[1]) / 1.2
+
+    return round(lux, 2)
+
+# =====================================================
+# START MESSAGE
+# =====================================================
+
+print("======================================")
+print("BH1750 + ThingzMate Cloud Started")
+print("======================================")
+
+time.sleep(2)
+
+# =====================================================
+# MAIN LOOP
+# =====================================================
+
+while True:
+
+    try:
+
+        # ==========================================
+        # READ SENSOR
+        # ==========================================
+
+        lux = read_light()
+
+        print("Light Intensity (Lux):", lux)
+
+        # ==========================================
+        # CREATE JSON PAYLOAD
+        # ==========================================
+
+        payload = {
+            "lux": lux
+        }
+
+        data = json.dumps(payload).encode()
+
+        print("Payload:", payload)
+
+        # ==========================================
+        # HTTP REQUEST
+        # ==========================================
+
+        req = request.Request(
+            URL,
+            method="POST"
+        )
+
+        req.add_header(
+            "Content-Type",
+            "application/json"
+        )
+
+        req.add_header(
+            "Authorization",
+            "Bearer " + API_KEY
+        )
+
+        # ==========================================
+        # SEND DATA TO THINGZMATE
+        # ==========================================
+
+        response = request.urlopen(
+            req,
+            data=data,
+            timeout=10
+        )
+
+        # ==========================================
+        # RESPONSE
+        # ==========================================
+
+        print("======================================")
+        print("Cloud Upload Success")
+        print("Server Response:", response.read().decode())
+        print("======================================")
+
+        time.sleep(5)
+
+    except KeyboardInterrupt:
+
+        print("======================================")
+        print("Program Stopped")
+        print("======================================")
+
+        break
+
+    except Exception as e:
+
+        print("======================================")
+        print("Error:", e)
+        print("======================================")
+
+        time.sleep(2)
 
 
  
@@ -111,16 +225,281 @@ Experiment 4A
 
 ### OUPUT  
 
-# FIGURE -04 ADD TITILE HERE 
+# FIGURE -04
 
-#  FIGURE -05 ADD TITILE HERE 
+<img width="960" height="1280" alt="image" src="https://github.com/user-attachments/assets/65c9ffb2-7daa-4792-852f-152666a8ef98" />
 
-# FIGURE -06 ADD TITLE HERE 
+#  FIGURE -05 
+<img width="1917" height="1198" alt="Screenshot 2026-08-01 114725" src="https://github.com/user-attachments/assets/0799f3d1-246f-4279-849f-5ebf4da19698" />
+
+
+
+
+# FIGURE -06
+<img width="1917" height="1198" alt="Screenshot 2026-08-01 111035" src="https://github.com/user-attachments/assets/9c60c573-9a7b-4310-bbbe-d65364dd1fd9" />
+
+
+
 
 Experiment 4B
 ## PROGRAM (Python)
 ```
+from urllib import request
+import json
+import time
+import smbus2
+import math
+import ssl
 
+# =====================================================
+# SSL FIX
+# =====================================================
+
+ssl._create_default_https_context = ssl._create_unverified_context
+
+# =====================================================
+# MPU9250 / MPU6500 CONFIGURATION
+# =====================================================
+
+# Change to 0x69 if your sensor address is 69
+MPU_ADDR = 0x68
+
+# MPU Registers
+PWR_MGMT_1 = 0x6B
+
+ACCEL_XOUT_H = 0x3B
+ACCEL_YOUT_H = 0x3D
+ACCEL_ZOUT_H = 0x3F
+
+GYRO_XOUT_H = 0x43
+GYRO_YOUT_H = 0x45
+GYRO_ZOUT_H = 0x47
+
+# =====================================================
+# I2C SETUP
+# =====================================================
+
+bus = smbus2.SMBus(1)
+
+# Wake up MPU Sensor
+try:
+
+    bus.write_byte_data(
+        MPU_ADDR,
+        PWR_MGMT_1,
+        0
+    )
+
+    print("======================================")
+    print("MPU Sensor Initialized Successfully")
+    print("======================================")
+
+except Exception as e:
+
+    print("======================================")
+    print("MPU Sensor Connection Failed")
+    print("Check:")
+    print("1. Wiring")
+    print("2. I2C Enabled")
+    print("3. Sensor Address")
+    print("4. Power Supply")
+    print("--------------------------------------")
+    print("Error :", e)
+    print("======================================")
+
+    exit()
+
+# =====================================================
+# THINGZMATE CLOUD CONFIGURATION
+# =====================================================
+
+API_KEY = "15edf4f4a47da00eade1879d2824712d"
+
+URL = "https://iot.saveetha.in:4433/api/v1/device-types/accerlarometer/devices/acc-device-id/uplink"
+
+# =====================================================
+# READ RAW SENSOR DATA
+# =====================================================
+
+def read_raw_data(addr):
+
+    high = bus.read_byte_data(
+        MPU_ADDR,
+        addr
+    )
+
+    low = bus.read_byte_data(
+        MPU_ADDR,
+        addr + 1
+    )
+
+    value = ((high << 8) | low)
+
+    if value > 32768:
+        value = value - 65536
+
+    return value
+
+# =====================================================
+# START MESSAGE
+# =====================================================
+
+print("======================================")
+print("MPU9250 / MPU6500 + ThingzMate Started")
+print("======================================")
+
+time.sleep(2)
+
+# =====================================================
+# MAIN LOOP
+# =====================================================
+
+while True:
+
+    try:
+
+        # ==========================================
+        # READ ACCELEROMETER
+        # ==========================================
+
+        acc_x = read_raw_data(ACCEL_XOUT_H)
+        acc_y = read_raw_data(ACCEL_YOUT_H)
+        acc_z = read_raw_data(ACCEL_ZOUT_H)
+
+        Ax = acc_x / 16384.0
+        Ay = acc_y / 16384.0
+        Az = acc_z / 16384.0
+
+        # ==========================================
+        # READ GYROSCOPE
+        # ==========================================
+
+        gyro_x = read_raw_data(GYRO_XOUT_H)
+        gyro_y = read_raw_data(GYRO_YOUT_H)
+        gyro_z = read_raw_data(GYRO_ZOUT_H)
+
+        Gx = gyro_x / 131.0
+        Gy = gyro_y / 131.0
+        Gz = gyro_z / 131.0
+
+        # ==========================================
+        # MOTION STATUS
+        # ==========================================
+
+        motion = math.sqrt(
+            (Ax * Ax) +
+            (Ay * Ay) +
+            (Az * Az)
+        )
+
+        if motion > 1.2:
+
+            status = "MOVING"
+
+        else:
+
+            status = "STABLE"
+
+        # ==========================================
+        # DISPLAY VALUES
+        # ==========================================
+
+        print("======================================")
+
+        print("Accelerometer")
+
+        print("Ax :", round(Ax, 2))
+        print("Ay :", round(Ay, 2))
+        print("Az :", round(Az, 2))
+
+        print("--------------------------------------")
+
+        print("Gyroscope")
+
+        print("Gx :", round(Gx, 2))
+        print("Gy :", round(Gy, 2))
+        print("Gz :", round(Gz, 2))
+
+        print("--------------------------------------")
+
+        print("Status :", status)
+
+        # ==========================================
+        # JSON PAYLOAD
+        # ==========================================
+
+        payload = {
+
+            "Ax": round(Ax, 2),
+            "Ay": round(Ay, 2),
+            "Az": round(Az, 2),
+
+            "Gx": round(Gx, 2),
+            "Gy": round(Gy, 2),
+            "Gz": round(Gz, 2),
+
+            "status": status
+        }
+
+        data = json.dumps(payload).encode()
+
+        print("--------------------------------------")
+        print("Payload :", payload)
+
+        # ==========================================
+        # HTTP REQUEST
+        # ==========================================
+
+        req = request.Request(
+            URL,
+            method="POST"
+        )
+
+        req.add_header(
+            "Content-Type",
+            "application/json"
+        )
+
+        req.add_header(
+            "Authorization",
+            "Bearer " + API_KEY
+        )
+
+        # ==========================================
+        # SEND DATA TO THINGZMATE
+        # ==========================================
+
+        response = request.urlopen(
+            req,
+            data=data,
+            timeout=10
+        )
+
+        # ==========================================
+        # CLOUD RESPONSE
+        # ==========================================
+
+        print("--------------------------------------")
+        print("Cloud Upload Success")
+        print("Response :", response.read().decode())
+
+        time.sleep(5)
+
+    except KeyboardInterrupt:
+
+        print("======================================")
+        print("Program Stopped")
+        print("======================================")
+
+        break
+
+    except Exception as e:
+
+        print("======================================")
+        print("Runtime Error :", e)
+        print("======================================")
+
+        time.sleep(2)
 
  
 
@@ -128,16 +507,18 @@ Experiment 4B
 
  
 ````
-
 ### OUPUT  
 
-# FIGURE -07 ADD TITILE HERE 
+# FIGURE 
+<img width="1586" height="992" alt="image" src="https://github.com/user-attachments/assets/0a2d1a90-bfef-475d-ba84-46383bbe46f1" />
+<img width="1586" height="992" alt="image" src="https://github.com/user-attachments/assets/c510584c-7b40-42cd-9de2-e792878fbdef" />
+<img width="1586" height="992" alt="image" src="https://github.com/user-attachments/assets/33b06b9a-667e-4af3-8eba-a752e9ed71ae" />
+<img width="1280" height="960" alt="image" src="https://github.com/user-attachments/assets/d3ba702f-be9e-456a-a6a0-45fa05a9c0cc" />
+<img width="960" height="1280" alt="image" src="https://github.com/user-attachments/assets/5f1b0b9a-fdc8-430a-b2f3-ed2901fd9d9c" />
 
-#  FIGURE -08 ADD TITILE HERE 
-
-# FIGURE -09 ADD TITLE HERE 
 
 
+ 
 
 
 ## **RESULT:**  
